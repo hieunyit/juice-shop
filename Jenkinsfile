@@ -30,6 +30,11 @@ pipeline {
             ''', odcInstallation: 'OWASP-DepCheck-12'
           }
         }
+        stage('retire.js scan Dependency') {
+          steps {
+            sh 'retire --package'
+          }
+        }
       }
     }
   }
