@@ -1,10 +1,16 @@
 pipeline {
   agent any
+  tools {
+    nodejs 'nodejs22.18.0'
+  }
 
   stages {
-    stage('Xin chao') {
+    stage('VM Node Version') {
       steps {
-        echo 'xin chao'
+        sh '''
+          node -v
+          npm -v
+        '''
       }
     }
   }
