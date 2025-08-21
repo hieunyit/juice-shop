@@ -3,7 +3,7 @@ pipeline {
 
   stages {
     stage('Xin chao') {
-      step {
+      steps {
         sh 'xin chao'
       }
     }
