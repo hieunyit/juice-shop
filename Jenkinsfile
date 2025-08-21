@@ -26,6 +26,7 @@ pipeline {
               --scan './'
               --out './'
               --format 'ALL'
+              --exclude '**/test/files/**'
               --prettyPrint
             ''', odcInstallation: 'OWASP-DepCheck-12'
           }
