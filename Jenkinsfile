@@ -32,7 +32,7 @@ pipeline {
         }
         stage('retire.js scan Dependency') {
           steps {
-            sh 'retire --package'
+            sh 'retire --path .'
           }
         }
       }
