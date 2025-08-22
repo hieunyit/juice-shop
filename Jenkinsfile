@@ -3,6 +3,9 @@ pipeline {
   tools {
     nodejs 'nodejs22.18.0'
   }
+  enviroment {
+    SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
+  }
 
   stages {
     stage('Installing Dependencies') {
@@ -70,8 +73,17 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-                njsscan --json --output njsscan-report.json
+                njsscan --json --output njsscan-report.json .
               '''
+            }
+          }
+        }
+        stage('Sonarqube scan') {
+          steps {
+            withSonarQubeEnv(credentialsId: 'sonar-qube-server') {
+              $SONAR_SCANNER_HOME/bin/sonar-scanner \
+                -Dsonar.projectKey=juice-shop
+                -Dsonar.sources=app.js
             }
           }
         }
