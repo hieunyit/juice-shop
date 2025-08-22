@@ -64,7 +64,9 @@ pipeline {
                   --config p/secrets \
                   --config p/javascript \
                   --config p/nodejsscan \
-                  --config r/javascript.lang.security.nodejs
+                  --config r/javascript.lang.security.nodejs \
+                  --json --output semgrep-report.json \
+                  --sarif --output semgrep-report.sarif 
               '''
             }
           }
