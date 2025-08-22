@@ -1,0 +1,182 @@
+rules:
+  # Command Injection
+  - id: node.command-injection.child_process
+    message: "Possible command injection via child_process with user input."
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec($ARG, ...)
+          - pattern: require('child_process').exec($ARG, ...)
+          - pattern: child_process.execSync($ARG, ...)
+          - pattern: child_process.spawn($ARG, ...)
+          - pattern: child_process.spawnSync($ARG, ...)
+      - metavariable-pattern:
+          metavariable: $ARG
+          pattern-either:
+            - pattern: req.$X
+            - pattern: req[$X]
+            - pattern: "... + req.$X + ..."
+            - pattern: `...${req.$X}...`
+
+  # NoSQLi (Mongo/Mongoose)
+  - id: node.nosqli.mongodb.where
+    message: "Possible NoSQL injection using user-controlled input."
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $C.find({$where: $Q})
+          - pattern: $C.findOne({$where: $Q})
+          - pattern: $C.update({$where: $Q}, ...)
+          - pattern: $C.aggregate([{ $match: $Q }, ...])
+      - metavariable-pattern:
+          metavariable: $Q
+          pattern-either:
+            - pattern: req.$X
+            - pattern: req[$X]
+            - pattern: "... + req.$X + ..."
+            - pattern: `...${req.$X}...`
+
+  # SQLi (string concat / template literal)
+  - id: node.sqli.string-concat
+    message: "Possible SQLi. Use parameterized queries."
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $DB.query($Q, ...)
+          - pattern: $DB.execute($Q, ...)
+      - metavariable-pattern:
+          metavariable: $Q
+          pattern-either:
+            - pattern: "... + req.$X + ..."
+            - pattern: `...${req.$X}...`
+
+  # Path Traversal
+  - id: node.path-traversal.fs
+    message: "Potential path traversal in fs path."
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: fs.readFile($P, ...)
+          - pattern: fs.createReadStream($P, ...)
+          - pattern: fs.writeFile($P, ...)
+          - pattern: fs.unlink($P, ...)
+      - metavariable-pattern:
+          metavariable: $P
+          pattern-either:
+            - pattern: req.$X
+            - pattern: req[$X]
+            - pattern: "... + req.$X + ..."
+            - pattern: `...${req.$X}...`
+
+  # XSS cơ bản
+  - id: node.xss.res-send
+    message: "Possible XSS: sending unescaped user input."
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: res.send($X)
+      - metavariable-pattern:
+          metavariable: $X
+          pattern-either:
+            - pattern: req.$Y
+            - pattern: req[$Y]
+            - pattern: "... + req.$Y + ..."
+            - pattern: `...${req.$Y}...`
+
+  # JWT none / expiry quá dài
+  - id: node.jwt.none
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern: jwt.sign($P, $S, {algorithm: 'none', ...})
+    message: "Insecure JWT alg=none."
+
+  - id: node.jwt.long-exp
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: jwt.sign($P, $S, {expiresIn: $EXP, ...})
+      - metavariable-regex:
+          metavariable: $EXP
+          regex: "(2[5-9]h|[3-9][0-9]h|[1-9][0-9]d|[2-9]d|[1-9]w|[1-9]m)"
+    message: "JWT expiry appears too long. Review policy."
+
+  # CORS wildcard
+  - id: node.cors.wildcard
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern: app.use(cors({origin: '*', ...}))
+    message: "CORS with '*' in production."
+
+  # Thiếu helmet()
+  - id: node.express.missing-helmet
+    severity: INFO
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-inside: |
+          const express = require('express');
+          const $APP = express();
+          ...
+      - pattern-not: $APP.use(helmet())
+    message: "Express app without helmet()."
+
+  # Hardcoded secrets
+  - id: node.secrets.hardcoded
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: const $N = "$V"
+          - pattern: let $N = "$V"
+          - pattern: var $N = "$V"
+      - metavariable-regex:
+          metavariable: $N
+          regex: "(?i)(secret|api[_-]?key|token|passwd|password|private[_-]?key)"
+      - metavariable-regex:
+          metavariable: $V
+          regex: "^[A-Za-z0-9_\\-\\.=]{12,}$"
+    message: "Hardcoded secret/token detected."
+
+  # Crypto yếu / random yếu
+  - id: node.crypto.weak-hash
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: crypto.createHash('md5')
+      - pattern: crypto.createHash('sha1')
+    message: "Weak hash (md5/sha1). Use SHA-256+."
+
+  - id: node.random.weak
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern: Math.random()
+    message: "Use crypto.randomBytes() for secrets."
+
+  # TLS verify off
+  - id: node.https.reject-unauthorized-false
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern: |
+      https.request(..., { ..., rejectUnauthorized: false, ... }, ...)
+    message: "TLS verification disabled."
+
+  # eval / new Function
+  - id: node.lang.dangerous-eval
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: eval($X)
+      - pattern: new Function($X)
+    message: "Avoid dynamic code execution."
+
+  # YAML load không an toàn
+  - id: node.yaml.unsafe-load
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: yaml.load($X)
+      - pattern: jsyaml.load($X)
+    message: "Prefer safe schema; validate source."
