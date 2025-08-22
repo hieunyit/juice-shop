@@ -3,7 +3,7 @@ pipeline {
   tools {
     nodejs 'nodejs22.18.0'
   }
-  enviroment {
+  environment {
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
   }
 
@@ -80,7 +80,7 @@ pipeline {
         }
         stage('Sonarqube scan') {
           steps {
-            withSonarQubeEnv(credentialsId: 'sonar-qube-server') {
+            withSonarQubeEnv('SonarQube Server') {
               sh '''
                 $SONAR_SCANNER_HOME/bin/sonar-scanner \
                   -Dsonar.projectKey=juice-shop \
