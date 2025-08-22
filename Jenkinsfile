@@ -16,7 +16,11 @@ pipeline {
     stage('Gitleaks scan secret') {
       steps {
         catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-          sh 'gitleaks detect --source . --redact --report-format sarif --report-path gitleaks-report.sarif'
+          sh '''
+            gitleaks detect --source . --redact \
+              --report-format sarif \
+              --report-path gitleaks-report.sarif
+          '''
         }
       }
     }
@@ -26,7 +30,7 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-              npm audit --audit-level=critical --json > npm-audit-report.jso
+              npm audit --audit-level=critical --json > npm-audit-report.json
               echo $?
               '''
             }
@@ -39,6 +43,7 @@ pipeline {
               --out './'
               --format 'ALL'
               --exclude '**/test/files/**'
+              --disableArchive
               --prettyPrint
             ''', odcInstallation: 'OWASP-DepCheck-12'
           }
@@ -58,13 +63,15 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-                semgrep \
+                semgrep scan \
                   --config p/owasp-top-ten \
                   --config p/security-audit \
                   --config p/secrets \
                   --config p/javascript \
-                  --config p/nodejsscan \
-                  --config r/javascript.lang.security.nodejs \
+                  --metrics=off \
+                  --exclude node_modules --exclude dist --exclude build --exclude coverage --exclude .git \
+                  --timeout 10 \
+                  --error \
                   --json --json-output=semgrep-report.json \
                   --sarif --sarif-output=semgrep-report.sarif
               '''
@@ -75,7 +82,9 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-                njsscan --json --output njsscan-report.json .
+                njsscan --recursive . \
+                  --exclude node_modules,dist,build,coverage,.git \
+                  --json --output njsscan-report.json
               '''
             }
           }
