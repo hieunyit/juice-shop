@@ -10,6 +10,11 @@ pipeline {
         sh 'npm install --no-audit'
       }
     }
+    stage('Gitleaks scan secret') {
+      steps {
+        sh 'gitleaks detect --source . --redact'
+      }
+    }
     stage('Dependency Scanning') {
       parallel {
         stage('NPM Dependency Audit') {
