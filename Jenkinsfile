@@ -26,7 +26,7 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-              npm audit --audit-level=critical
+              npm audit --audit-level=critical --json > npm-audit-report.jso
               echo $?
               '''
             }
@@ -46,7 +46,7 @@ pipeline {
         stage('retire.js scan Dependency') {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh 'retire --path .'
+              sh 'retire --path .  --outputformat json --outputpath retire-report.json'
             }
           }
         }
@@ -65,8 +65,8 @@ pipeline {
                   --config p/javascript \
                   --config p/nodejsscan \
                   --config r/javascript.lang.security.nodejs \
-                  --json --output semgrep-report.json \
-                  --sarif --output semgrep-report.sarif 
+                  --json --json-output=semgrep-report.json \
+                  --sarif --sarif-output=semgrep-report.sarif
               '''
             }
           }
