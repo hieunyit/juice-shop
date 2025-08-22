@@ -1,0 +1,8 @@
+[allowlist]
+  description = "Ignore test files and fixtures"
+  paths = [
+    '''^test/''',
+    '''^tests?/''',
+    '''^__tests__/''',
+    '''^test/fixtures/'''
+  ]
