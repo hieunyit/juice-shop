@@ -12,7 +12,7 @@ pipeline {
     }
     stage('Gitleaks scan secret') {
       steps {
-        sh 'gitleaks detect --source . --redact --exclude-paths "test,tests,__tests__,test/fixtures" --report-format sarif --report-path gitleaks-report.sarif'
+        sh 'gitleaks detect --source . --redact --report-format sarif --report-path gitleaks-report.sarif'
       }
     }
     stage('Dependency Scanning') {
