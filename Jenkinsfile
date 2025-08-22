@@ -66,6 +66,15 @@ pipeline {
             }
           }
         }
+        stage('Semgrep scan') {
+          steps {
+            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
+              sh '''
+                njsscan --json --output njsscan-report.json
+              '''
+            }
+          }
+        }
       }
     }
   }
