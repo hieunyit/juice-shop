@@ -82,7 +82,7 @@ pipeline {
           steps {
             withSonarQubeEnv(credentialsId: 'sonar-qube-server') {
               $SONAR_SCANNER_HOME/bin/sonar-scanner \
-                -Dsonar.projectKey=juice-shop
+                -Dsonar.projectKey=juice-shop \
                 -Dsonar.sources=app.js
             }
           }
