@@ -61,7 +61,7 @@ pipeline {
                   --config p/secrets \
                   --config p/javascript \
                   --config p/nodejsscan \
-                  --json --output semgrep-report.json
+                  --config r/javascript.lang.security.nodejs
               '''
             }
           }
