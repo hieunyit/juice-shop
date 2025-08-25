@@ -1,8 +1,6 @@
 pipeline {
   agent any
-  tools {
-    nodejs 'nodejs22.18.0'
-  }
+
   environment {
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
   }
@@ -24,11 +22,6 @@ pipeline {
         }
       }
     }
-    stage('DefectDojoPublisher') {
-      steps {
-          defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Gitleaks Scan'
-      }
-    }
     stage('Dependency Scanning') {
       parallel {
         stage('NPM Dependency Audit') {
@@ -43,20 +36,26 @@ pipeline {
         }
         stage('OWASP Dependency Check') {
           steps {
-            dependencyCheck additionalArguments: '''
-              --scan './'
-              --out './'
-              --format 'ALL'
-              --exclude '**/test/files/**'
-              --disableArchive
-              --prettyPrint
-            ''', odcInstallation: 'OWASP-DepCheck-12'
+            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
+              dependencyCheck additionalArguments: '''
+                --scan './'
+                --out './'
+                --format 'ALL'
+                --exclude '**/test/files/**'
+                --disableArchive
+                --prettyPrint
+              ''', odcInstallation: 'OWASP-DepCheck-12'
+              dependencyCheckPublisher(
+                failedTotalHigh: 1,
+                stopBuild: true
+              )
+            }
           }
         }
         stage('retire.js scan Dependency') {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh 'retire --path .  --outputformat json --outputpath retire-report.json'
+              sh 'retire --severity high --path .  --outputformat json --outputpath retire-report.json'
             }
           }
         }
@@ -89,7 +88,7 @@ pipeline {
               sh '''
                 njsscan --recursive . \
                   --exclude node_modules,dist,build,coverage,.git \
-                  --json --output njsscan-report.json
+                  --sarif --output njsscan-report.sarif
               '''
             }
           }
@@ -105,6 +104,17 @@ pipeline {
           }
         }
       }
+    }
+  }
+  post {
+    alway {
+      defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Gitleaks Scan'
+      defectDojoPublisher artifact: 'npm-audit-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'NPM Audit Scan'
+      defectDojoPublisher artifact: 'dependency-check-report.xml', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Dependency Check Scan'
+      defectDojoPublisher artifact: 'retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
+      defectDojoPublisher artifact: 'semgrep-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
+      defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
+      defectDojoPublisher autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SonarQube API Import'
     }
   }
 }
