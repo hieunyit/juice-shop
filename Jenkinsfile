@@ -18,9 +18,10 @@ pipeline {
         catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
           sh '''
             gitleaks detect --source . --redact \
-              --report-format sarif \
-              --report-path gitleaks-report.sarif
+              --report-format json \
+              --report-path gitleaks-report.json
           '''
+          defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, productId: '1', scanType: 'Gitleaks Scan'
         }
       }
     }
