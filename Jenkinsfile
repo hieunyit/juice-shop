@@ -21,7 +21,13 @@ pipeline {
               --report-format json \
               --report-path gitleaks-report.json
           '''
-          defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, productId: '1', scanType: 'Gitleaks Scan'
+          defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Gitleaks Scan'
+        }
+      }
+    }
+    stage('DefectDojoPublisher') {
+      steps {
+          defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Gitleaks Scan'
         }
       }
     }
