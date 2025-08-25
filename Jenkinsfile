@@ -113,7 +113,7 @@ pipeline {
       defectDojoPublisher artifact: 'retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
       defectDojoPublisher artifact: 'semgrep-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
       defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
-      defectDojoPublisher autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SonarQube API Import'
+      defectDojoPublisher artifact: '', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SonarQube API Import'
     }
   }
 }
