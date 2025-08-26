@@ -1,6 +1,8 @@
 pipeline {
   agent any
-
+  tools {
+    nodejs 'nodejs22.18.0'
+  }
   environment {
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
   }
@@ -17,6 +19,7 @@ pipeline {
           sh '''
             gitleaks detect --source . --redact \
               --report-format json \
+              --gitleaks-ignore-path . \
               --report-path gitleaks-report.json
           '''
         }
