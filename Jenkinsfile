@@ -5,6 +5,11 @@ pipeline {
   }
   environment {
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
+    DOJO_URL = 'http://localhost:8081'
+    DOJO_TOKEN = credentials('defectdojo-api-token')
+    PRODUCT_ID = '1'
+    ENGAGEMENT_ID = '1'
+    API_SCAN_CFG_ID = '1'
   }
 
   stages {
@@ -109,7 +114,16 @@ pipeline {
       defectDojoPublisher artifact: 'retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
       defectDojoPublisher artifact: 'semgrep-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
       defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
-      defectDojoPublisher artifact: '', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SonarQube API Import'
+      script {
+        sh '''
+          curl -sS -X POST "$DOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DOJO_TOKEN" \
+            -F "scan_type=SonarQube API Import" \
+            -F "product_id=$PRODUCT_ID" \
+            -F "engagement_id=$ENGAGEMENT_ID" \
+            -F "api_scan_configuration=$API_SCAN_CFG_ID"
+        '''
+      }
     }
   }
 }
