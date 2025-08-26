@@ -51,7 +51,7 @@ pipeline {
                 --exclude '**/test/files/**'
                 --disableArchive
                 --prettyPrint
-              ''', nvdCredentialsId: 'nvd-api-key', odcInstallation: 'OWASP-DepCheck-12'
+              ''', odcInstallation: 'OWASP-DepCheck-12'
             }
           }
         }
