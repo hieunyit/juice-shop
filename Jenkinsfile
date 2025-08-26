@@ -78,7 +78,6 @@ pipeline {
                   --exclude node_modules --exclude dist --exclude build --exclude coverage --exclude .git \
                   --timeout 10 \
                   --error \
-                  --json --json-output=semgrep-report.json \
                   --sarif --sarif-output=semgrep-report.sarif
               '''
             }
@@ -88,9 +87,7 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-                njsscan --recursive . \
-                  --exclude node_modules,dist,build,coverage,.git \
-                  --sarif --output njsscan-report.sarif
+                njsscan --sarif -o njsscan-report.sarif
               '''
             }
           }
