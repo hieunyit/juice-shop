@@ -12,12 +12,6 @@ pipeline {
     API_SCAN_CFG_ID = '1'
   }
 
-  stages {
-    stage('Installing Dependencies') {
-      steps {
-        sh 'npm install --no-audit'
-      }
-    }
     stage('Gitleaks scan secret') {
       steps {
         catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
