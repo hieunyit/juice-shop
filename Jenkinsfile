@@ -43,7 +43,7 @@ pipeline {
                 --exclude '**/test/files/**'
                 --disableArchive
                 --prettyPrint
-              ''', odcInstallation: 'OWASP-DepCheck-12'
+              ''', nvdCredentialsId: 'nvd-api-key', odcInstallation: 'OWASP-DepCheck-12'
               dependencyCheckPublisher(
                 failedTotalHigh: 1,
                 stopBuild: true
