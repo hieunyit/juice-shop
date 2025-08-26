@@ -74,7 +74,7 @@ pipeline {
                   --exclude node_modules --exclude dist --exclude build --exclude coverage --exclude .git \
                   --timeout 10 \
                   --error \
-                  --sarif --sarif-output=semgrep-report.sarif
+                  --json --json-output=semgrep-report.json
               '''
             }
           }
