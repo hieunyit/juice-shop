@@ -83,7 +83,7 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-                njsscan --sarif -o njsscan-report.sarif
+                njsscan --sarif -o njsscan-report.sarif .
               '''
             }
           }
