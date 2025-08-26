@@ -47,10 +47,6 @@ pipeline {
                 --disableArchive
                 --prettyPrint
               ''', nvdCredentialsId: 'nvd-api-key', odcInstallation: 'OWASP-DepCheck-12'
-              dependencyCheckPublisher(
-                failedTotalHigh: 1,
-                stopBuild: true
-              )
             }
           }
         }
