@@ -3,7 +3,7 @@ pipeline {
   environment {
     DOCKER_PASSWORD = credentials('docker-hub-password')
   }
-
+  stages {
     stage('Docker Build and Push') {
       steps {
         sh 'podman login docker.io -u hieuny -p $DOCKER_PASSWORD'
@@ -18,5 +18,6 @@ pipeline {
         }
       }
     }
+  }
 }
 
