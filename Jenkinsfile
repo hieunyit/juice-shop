@@ -7,9 +7,9 @@ pipeline {
     stage('Docker Build and Push') {
       steps {
         sh '''
-          podman login docker.io -u hieuny -p $DOCKER_PASSWORD
-          podman build --cgroup-manager=cgroupfs -t docker.io/hieuny/juice-shop:$GIT_COMMIT .
-          podman push --digestfile digest.txt docker.io/hieuny/juice-shop:$GIT_COMMIT
+          docker login -u hieuny -p $DOCKER_PASSWORD
+          docker build --cgroup-manager=cgroupfs -t hieuny/juice-shop:$GIT_COMMIT .
+          docker push --digestfile digest.txt hieuny/juice-shop:$GIT_COMMIT
         '''
       }
     }
@@ -18,7 +18,6 @@ pipeline {
         withCredentials([file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),string(credentialsId: 'cosign-pass', variable: 'COSIGN_PASSWORD')]) {
           sh '''
             DIGEST=$(cat digest.txt)
-            export COSIGN_YES=true
             cosign sign -y --key $COSIGN_KEY docker.io/hieuny/juice-shop@$DIGEST
           '''
         }
