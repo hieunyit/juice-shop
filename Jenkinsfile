@@ -149,7 +149,7 @@ pipeline {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
                script {
                  sh '''
-                   podman run --rm -v $(pwd):/project docker.io/openpolicyagent/conftest:latest test --parser dockerfile -p policy Dockerfile  --output sarif > opa-report.sarif
+                   conftest test --parser dockerfile -p policy Dockerfile  --output sarif > opa-report.sarif
                  '''
                }
             }
