@@ -114,7 +114,7 @@ pipeline {
                script {
                  sh '''
                   dockerImageName=$(awk 'NR==1 {print $2}' Dockerfile)
-                  trivy image --severity HIGH,CRITICAL -f json -o trivy-result.json $dockerImageName
+                  trivy image --scanners vuln --severity HIGH,CRITICAL -f json -o trivy-result.json $dockerImageName
                  '''
                }
             }
