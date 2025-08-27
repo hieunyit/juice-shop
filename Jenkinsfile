@@ -105,18 +105,12 @@ pipeline {
         }
       }
     }
-    stage('Report SonarQube'){
+    
+    stage('Trivy Scan'){
       steps {
-        script {
-          sh '''
-            curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
-              -H "Authorization: Token $DOJO_TOKEN" \
-              -F "scan_type=SonarQube API Import" \
-              -F "product_id=$PRODUCT_ID" \
-              -F "engagement_id=$ENGAGEMENT_ID" \
-              -F "api_scan_configuration=$API_SCAN_CFG_ID"
-          '''
-        }
+         script {
+           sh 'bash trivy-docker-image-scan.sh'
+         }
       }
     }
   }
@@ -128,6 +122,16 @@ pipeline {
       defectDojoPublisher artifact: 'retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
       defectDojoPublisher artifact: 'semgrep-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
       defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
+       script {
+          sh '''
+            curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
+              -H "Authorization: Token $DOJO_TOKEN" \
+              -F "scan_type=SonarQube API Import" \
+              -F "product_id=$PRODUCT_ID" \
+              -F "engagement_id=$ENGAGEMENT_ID" \
+              -F "api_scan_configuration=$API_SCAN_CFG_ID"
+          '''
+        }
     }
   }
 }
