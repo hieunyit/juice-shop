@@ -114,7 +114,7 @@ pipeline {
                script {
                  sh '''
                   dockerImageName=$(awk 'NR==1 {print $2}' Dockerfile)
-                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o trivy-result.json $dockerImageName
+                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o trivy-report.json $dockerImageName
                  '''
                }
             }
@@ -124,11 +124,9 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
                script {
-                 sh """
-                   podman run --rm -v \$(pwd):/project \
-                      openpolicyagent/conftest test \
-                      --policy policy Dockerfile
-                 """
+                 sh '''
+                   podman run --rm -v $(pwd):/project docker.io/openpolicyagent/conftest:latest --parser dockerfile -p policy -d config Dockerfile
+                 '''
                }
             }
           }
@@ -144,6 +142,7 @@ pipeline {
       defectDojoPublisher artifact: 'retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
       defectDojoPublisher artifact: 'semgrep-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
       defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
+      defectDojoPublisher artifact: 'trivy-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Trivy Scan'
        script {
           sh '''
             curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
