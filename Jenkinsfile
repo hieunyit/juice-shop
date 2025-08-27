@@ -109,7 +109,10 @@ pipeline {
     stage('Trivy Scan'){
       steps {
          script {
-           sh 'bash trivy-docker-image-scan.sh'
+           sh '''
+            dockerImageName=$(awk 'NR==1 {print $2}' Dockerfile)
+            trivy image --severity HIGH,CRITICAL -f json -o trivy-result.json $dockerImageName
+           '''
          }
       }
     }
