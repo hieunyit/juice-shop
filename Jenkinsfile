@@ -10,7 +10,7 @@ pipeline {
           docker login -u hieuny -p $DOCKER_PASSWORD
           docker build -t hieuny/juice-shop:$GIT_COMMIT .
           docker push docker.io/hieuny/juice-shop:$GIT_COMMIT | tee push.log
-          awk '/digest: sha256:/ {print $2; exit}' push.log > digest.txt
+          grep -m1 -oE 'sha256:[0-9a-f]{64}' push.log > digest.txt
         '''
       }
     }
