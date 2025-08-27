@@ -113,7 +113,31 @@ pipeline {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
                script {
                  sh '''
-                  dockerImageName=$(awk 'NR==1 {print $2}' Dockerfile)
+                  dockerImageName=$(
+                    awk 'BEGIN{IGNORECASE=1}
+                         toupper($1)=="FROM"{
+                           count++
+                           img=""; stg=""
+                           for(i=2;i<=NF;i++){
+                             t=$i
+                             if (t ~ /^--platform=/) continue
+                             if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
+                             if (img=="") img=t
+                           }
+                           if (stg!="") stages[tolower(stg)]=1
+                           if (img!="") {
+                             if (!(tolower(img) in stages)) {
+                               if (first_external=="") first_external=img
+                               last_external=img
+                             }
+                             last_any=img
+                           }
+                         }
+                         END{
+                           if (count<=1) print (first_external!=""?first_external:last_any);
+                           else          print (last_external!=""?last_external:last_any);
+                         }' Dockerfile
+                  )
                   trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o trivy-report.json $dockerImageName
                  '''
                }
@@ -125,7 +149,7 @@ pipeline {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
                script {
                  sh '''
-                   podman run --rm -v $(pwd):/project docker.io/openpolicyagent/conftest:latest --parser dockerfile -p policy -d config Dockerfile
+                   podman run --rm -v $(pwd):/project docker.io/openpolicyagent/conftest:latest test --parser dockerfile -p policy Dockerfile  --output sarif > opa-report.sarif
                  '''
                }
             }
@@ -143,6 +167,7 @@ pipeline {
       defectDojoPublisher artifact: 'semgrep-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
       defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
       defectDojoPublisher artifact: 'trivy-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Trivy Scan'
+      defectDojoPublisher artifact: 'opa-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
        script {
           sh '''
             curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
