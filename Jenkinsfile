@@ -109,7 +109,7 @@ pipeline {
       steps {
         script {
           sh '''
-            curl -sS -X POST "$DOJO_URL/api/v2/reimport-scan/" \
+            curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
               -H "Authorization: Token $DOJO_TOKEN" \
               -F "scan_type=SonarQube API Import" \
               -F "product_id=$PRODUCT_ID" \
