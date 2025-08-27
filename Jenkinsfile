@@ -8,7 +8,7 @@ pipeline {
       steps {
         sh '''
           docker login -u hieuny -p $DOCKER_PASSWORD
-          docker build --cgroup-manager=cgroupfs -t hieuny/juice-shop:$GIT_COMMIT .
+          docker build -t hieuny/juice-shop:$GIT_COMMIT .
           docker push --digestfile digest.txt hieuny/juice-shop:$GIT_COMMIT
         '''
       }
