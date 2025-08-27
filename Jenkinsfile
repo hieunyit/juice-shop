@@ -7,7 +7,7 @@ pipeline {
     stage('Docker Build and Push') {
       steps {
         sh 'podman login docker.io -u hieuny -p $DOCKER_PASSWORD'
-        sh 'podman build -t docker.io/hieuny/juice-shop:$GIT_COMMIT .'
+        sh 'podman build --cgroup-manager=cgroupfs -t docker.io/hieuny/juice-shop:$GIT_COMMIT .'
         sh 'podman push docker.io/hieuny/juice-shop:$GIT_COMMIT'
       }
     }
