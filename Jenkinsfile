@@ -1,25 +1,12 @@
 pipeline {
   agent any
-  environment {
-    DOCKER_PASSWORD = credentials('docker-hub-password')
-  }
   stages {
-    stage('Docker Build and Push') {
-      steps {
-        sh '''
-          docker login -u hieuny -p $DOCKER_PASSWORD
-          docker build -t hieuny/juice-shop:$GIT_COMMIT .
-          docker push docker.io/hieuny/juice-shop:$GIT_COMMIT | tee push.log
-          grep -m1 -oE 'sha256:[0-9a-f]{64}' push.log > digest.txt
-        '''
-      }
-    }
-    stage('Sign with Cosign'){
-      steps {
-        withCredentials([file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),string(credentialsId: 'cosign-pass', variable: 'COSIGN_PASSWORD')]) {
+    stage('Deploy - AWS EC2'){
+      withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
+        sshagent(['ssh-key']) {
           sh '''
-            DIGEST=$(cat digest.txt)
-            cosign sign -y --key $COSIGN_KEY docker.io/hieuny/juice-shop@$DIGEST
+            EC2_HOST=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
+            ssh -o StrictHostKeyChecking=no ec2-user@$EC2_HOST 'id'
           '''
         }
       }
