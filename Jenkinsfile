@@ -8,7 +8,9 @@ pipeline {
     DOJO_URL = 'http://localhost:8081'
     DOJO_TOKEN = credentials('defectdojo-api-token')
     PRODUCT_ID = '1'
+    PRODUCT_NAME = 'Juice Shop'
     ENGAGEMENT_ID = '1'
+    ENGAGEMENT_NAME = 'Jenkins'
     API_SCAN_CFG_ID = '1'
   }
 
@@ -99,6 +101,7 @@ pipeline {
               sh '''
                 $SONAR_SCANNER_HOME/bin/sonar-scanner \
                   -Dsonar.projectKey=juice-shop \
+                  -Dsonar.exclusions=**/test/**
               '''
             }
           }
@@ -170,12 +173,28 @@ pipeline {
       defectDojoPublisher artifact: 'opa-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
        script {
           sh '''
-            curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
-              -H "Authorization: Token $DOJO_TOKEN" \
-              -F "scan_type=SonarQube API Import" \
-              -F "product_id=$PRODUCT_ID" \
-              -F "engagement_id=$ENGAGEMENT_ID" \
-              -F "api_scan_configuration=$API_SCAN_CFG_ID"
+            TEST_ID=$(curl -sS -H "Authorization: Token $DD_TOKEN" \
+            "$DD_URL/api/v2/tests/?engagement=$ENGAGEMENT&scan_type=SonarQube%20API%20Import" \
+            | jq -r '.results[0].id // empty')
+            if [ -n "$TEST_ID" ]; then
+              curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
+                -H "Authorization: Token $DOJO_TOKEN" \
+                -F "scan_type=SonarQube API Import" \
+                -F "product_name=$PRODUCT_NAME" \
+                -F "engagement_name=$ENGAGEMENT_NAME" \
+                -F "product_id=$PRODUCT_ID" \
+                -F "engagement_id=$ENGAGEMENT_ID" \
+                -F "api_scan_configuration=$API_SCAN_CFG_ID"
+            else
+              curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
+                -H "Authorization: Token $DOJO_TOKEN" \
+                -F "scan_type=SonarQube API Import" \
+                -F "product_name=$PRODUCT_NAME" \
+                -F "engagement_name=$ENGAGEMENT_NAME" \
+                -F "product_id=$PRODUCT_ID" \
+                -F "engagement_id=$ENGAGEMENT_ID" \
+                -F "api_scan_configuration=$API_SCAN_CFG_ID"
+            fi
           '''
         }
     }
