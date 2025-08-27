@@ -5,6 +5,7 @@ pipeline {
   }
   environment {
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
+    DOCKER_PASSWORD = credentials('docker-hub-password')
     DOJO_URL = 'http://localhost:8081'
     DOJO_TOKEN = credentials('defectdojo-api-token')
     PRODUCT_ID = '1'
@@ -157,6 +158,20 @@ pipeline {
                }
             }
           }
+        }
+      }
+    }
+    stage('Docker Build and Push') {
+      steps {
+        sh 'podman login docker.io -u hieuny -p $DOCKER_PASSWORD'
+        sh 'podman build -t docker.io/hieuny/juice-shop:$GIT_COMMIT .'
+        sh 'podman push docker.io/hieuny/juice-shop:$GIT_COMMIT'
+      }
+    }
+    stage('Sign with Cosign'){
+      steps {
+        withCredentials([file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY')]) {
+          cosign sign --key $COSIGN_KEY docker.io/hieuny/juice-shop:$GIT_COMMIT
         }
       }
     }
