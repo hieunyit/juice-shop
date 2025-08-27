@@ -14,7 +14,7 @@ pipeline {
     stage('Sign with Cosign'){
       steps {
         withCredentials([file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),string(credentialsId: 'cosign-pass', variable: 'COSIGN_PASSWORD')]) {
-          sh 'cosign sign --key $COSIGN_KEY docker.io/hieuny/juice-shop:$GIT_COMMIT'
+          sh 'cosign sign --yes=false --key $COSIGN_KEY docker.io/hieuny/juice-shop:$GIT_COMMIT'
         }
       }
     }
