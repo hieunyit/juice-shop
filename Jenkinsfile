@@ -19,24 +19,24 @@ pipeline {
           }
         }
       }
-      stage('Integration Testing - AWS EC2') {
-        steps {
-          withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
-            script {
-              sh '''
-                URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
-                echo "URL Data - $URL"
-                if [[ "$URL" != '' ]]; then
-                  http_code=$(curl -s -o /dev/null -w "%{http_code}" http://$URL:3000)
-                  echo "http_code - $http_code"
-                  if [[ "$http_code" -eq 200 ]]; then
-                    echo "HTTP Status Code Tests Passed"
-                  else
-                    echo "One or more test(s) failed"
-                    exit 1
-                  fi
-              '''
-            }
+    }
+    stage('Integration Testing - AWS EC2') {
+      steps {
+        withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
+          script {
+            sh '''
+              URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
+              echo "URL Data - $URL"
+              if [[ "$URL" != '' ]]; then
+                http_code=$(curl -s -o /dev/null -w "%{http_code}" http://$URL:3000)
+                echo "http_code - $http_code"
+                if [[ "$http_code" -eq 200 ]]; then
+                  echo "HTTP Status Code Tests Passed"
+                else
+                  echo "One or more test(s) failed"
+                  exit 1
+                fi
+            '''
           }
         }
       }
