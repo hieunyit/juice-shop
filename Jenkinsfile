@@ -31,7 +31,7 @@ pipeline {
               if [ -n "$URL" ]; then
                 http_code=$(curl -s -o /dev/null -w "%{http_code}" http://$URL:3000)
                 echo "http_code - $http_code"
-                if [[ "$http_code" -eq 200 ]]; then
+                if [ "$http_code" -eq 200 ]; then
                   echo "HTTP Status Code Tests Passed"
                 else
                   echo "One or more test(s) failed"
