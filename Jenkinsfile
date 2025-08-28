@@ -36,6 +36,7 @@ pipeline {
                   echo "One or more test(s) failed"
                   exit 1
                 fi
+              fi
             '''
           }
         }
