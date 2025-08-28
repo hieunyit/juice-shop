@@ -1,61 +1,62 @@
 pipeline {
   agent any
   stages {
-    stage('Deploy - AWS EC2') {
+    stage('Config') {
       steps {
-        withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
-          sshagent(['ssh-key']) {
-            sh '''
-              EC2_HOST=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
-              ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST "
-                if docker ps -a | grep -q "juice-shop"; then
-                  echo "Container found. Stopping ..."
-                  docker stop "juice-shop" && docker rm "juice-shop"
-                  echo "Container stop and removed"
-                fi
-                  docker run -d --name juice-shop -p 3000:3000 hieuny/juice-shop:b4e66e4a7ddcb0f9c95ce07a4240786da9bab5d9
-              "
-            '''
-          }
+        sh '''
+         cat <<_EOF_ > td.json
+{
+  "family": "juice-shop-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::065525255066:role/juice-shop-task-exec-role",
+  "containerDefinitions": [
+    {
+      "name": "juice-shop-container",
+      "image": "hieuny/juice-shop:dfe583d9400f5a2b30038913c004136183dc3658",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
         }
+      ],
+      "essential": true,
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:3000/ || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "cpu": 512,
+      "memory": 1024,
+      "memoryReservation": 512
+    }
+  ]
+}
+_EOF_
+        '''
       }
     }
-    stage('Integration Testing - AWS EC2') {
+    stage('Deploy') {
       steps {
-        withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
-          script {
-            sh '''
-              sleep 20s
-              URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
-              echo "URL Data - $URL"
-              if [ -n "$URL" ]; then
-                http_code=$(curl -s -o /dev/null -w "%{http_code}" http://$URL:3000)
-                echo "http_code - $http_code"
-                if [ "$http_code" -eq 200 ]; then
-                  echo "HTTP Status Code Tests Passed"
-                else
-                  echo "One or more test(s) failed"
-                  exit 1
-                fi
-              fi
-            '''
-          }
-        }
+        sh ''' 
+          aws ecs register-task-definition --family ${FG_TD_FAMILY} --region ${REGION} --output json --cli-input-json file://$FG_TD_FILE #>/dev/null 2>&1
+          aws ecs update-service --cluster ${FG_CLUSTER} --service ${FG_SERVICE} --task-definition ${FG_TD_FAMILY} --output json --region ${REGION} --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment #>/dev/null 2>&1
+        '''
       }
     }
-   stage('DAST - OWASP ZAP') {
-     steps {
-       withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
-         script {
-           sh '''
-              URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
-              chmod 777 $(pwd)
-              docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py -t http://$URL:3000 -x zap-report.xml -r zap-report.html
-           '''
-         }
-       }
-     }
-   } 
   }
 }
 
