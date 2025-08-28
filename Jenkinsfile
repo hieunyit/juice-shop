@@ -43,6 +43,19 @@ pipeline {
         }
       }
     }
+   stage('DAST - OWASP ZAP') {
+     steps {
+       withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
+         script {
+           sh '''
+              URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
+              chmod 777 $(pwd)
+              docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py -t http://$URL:3000 -x zap-report.xml -r zap-report.html
+           '''
+         }
+       }
+     }
+   } 
   }
 }
 
