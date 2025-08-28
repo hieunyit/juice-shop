@@ -13,7 +13,7 @@ pipeline {
                   docker stop "juice-shop" && docker rm "juice-shop"
                   echo "Container stop and removed"
                 fi
-                  docker run --name juice-shop -p 3000:3000 hieuny/juice-shop:b4e66e4a7ddcb0f9c95ce07a4240786da9bab5d9
+                  docker run -d --name juice-shop -p 3000:3000 hieuny/juice-shop:b4e66e4a7ddcb0f9c95ce07a4240786da9bab5d9
               "
             '''
           }
