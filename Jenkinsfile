@@ -25,6 +25,7 @@ pipeline {
         withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
           script {
             sh '''
+              sleep 20s
               URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
               echo "URL Data - $URL"
               if [ -n "$URL" ]; then
