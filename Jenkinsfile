@@ -27,7 +27,7 @@ pipeline {
             sh '''
               URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
               echo "URL Data - $URL"
-              if [[ "$URL" != '' ]]; then
+              if [[ "$URL" != "" ]]; then
                 http_code=$(curl -s -o /dev/null -w "%{http_code}" http://$URL:3000)
                 echo "http_code - $http_code"
                 if [[ "$http_code" -eq 200 ]]; then
