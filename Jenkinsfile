@@ -1,9 +1,9 @@
 pipeline {
   agent any
   stages {
-    stage('Config') {
-      withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
-        steps {
+    stage('Config') {    
+      steps {
+        withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
           sh '''
            cat <<_EOF_ > td.json
 {
