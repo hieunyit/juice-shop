@@ -2,9 +2,10 @@ pipeline {
   agent any
   stages {
     stage('Config') {
-      steps {
-        sh '''
-         cat <<_EOF_ > td.json
+      withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
+        steps {
+          sh '''
+           cat <<_EOF_ > td.json
 {
   "family": "juice-shop-task",
   "networkMode": "awsvpc",
@@ -47,14 +48,17 @@ pipeline {
 }
 _EOF_
         '''
+        }
       }
     }
     stage('Deploy') {
       steps {
-        sh ''' 
-          aws ecs register-task-definition --output json --cli-input-json file://td.json
-          aws ecs update-service --cluster juice-shop-cluster --service juice-shop-svc --task-definition register-task-definition --output json --region --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment
-        '''
+        withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
+          sh ''' 
+            aws ecs register-task-definition --output json --cli-input-json file://td.json
+            aws ecs update-service --cluster juice-shop-cluster --service juice-shop-svc --task-definition register-task-definition --output json --region --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment
+          '''
+        }
       }
     }
   }
