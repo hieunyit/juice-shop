@@ -56,7 +56,7 @@ _EOF_
         withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
           sh ''' 
             aws ecs register-task-definition --output json --cli-input-json file://td.json
-            aws ecs update-service --cluster juice-shop-cluster --service juice-shop-svc --task-definition register-task-definition --output json --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment
+            aws ecs update-service --cluster juice-shop-cluster --service juice-shop-svc --task-definition juice-shop-task register-task-definition --output json --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment
           '''
         }
       }
