@@ -52,8 +52,8 @@ _EOF_
     stage('Deploy') {
       steps {
         sh ''' 
-          aws ecs register-task-definition --family ${FG_TD_FAMILY} --region ${REGION} --output json --cli-input-json file://$FG_TD_FILE #>/dev/null 2>&1
-          aws ecs update-service --cluster ${FG_CLUSTER} --service ${FG_SERVICE} --task-definition ${FG_TD_FAMILY} --output json --region ${REGION} --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment #>/dev/null 2>&1
+          aws ecs register-task-definition --output json --cli-input-json file://td.json
+          aws ecs update-service --cluster juice-shop-cluster --service juice-shop-svc --task-definition register-task-definition --output json --region --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1,base=0 --force-new-deployment
         '''
       }
     }
