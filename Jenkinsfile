@@ -198,6 +198,13 @@ pipeline {
         }
       }
     }
+    stage('Deploy to Prod?') {
+      steps {
+        timeout(time: 1, unit: 'DAYS') {
+          input message: 'Deploy to Production?', ok: 'YES! Let us try this on Production'
+        }
+      }
+    }
     stage('Deploy - AWS EC2') {
       steps {
         withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
