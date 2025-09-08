@@ -274,9 +274,7 @@ pipeline {
       defectDojoPublisher artifact: 'opa-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
        script {
           sh '''
-            TEST_ID=$(curl -sS -H "Authorization: Token $DD_TOKEN" \
-            "$DOJO_URL/api/v2/tests/?engagement=$ENGAGEMENT_ID&scan_type=SonarQube%20API%20Import" \
-            | jq -r '.results[0].id // empty')
+            TEST_ID=$(curl -sS -H "Authorization: Token $DD_TOKEN" "$DOJO_URL/api/v2/tests/?engagement=$ENGAGEMENT_ID&scan_type=SonarQube%20API%20Import" | jq -r '.results[0].id')
             if [ -n "$TEST_ID" ]; then
               curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
                 -H "Authorization: Token $DOJO_TOKEN" \
