@@ -176,7 +176,7 @@ pipeline {
         withCredentials([file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),string(credentialsId: 'cosign-pass', variable: 'COSIGN_PASSWORD')]) {
           sh '''
             DIGEST=$(cat digest.txt)
-            cosign sign -y --key $COSIGN_KEY docker.io/hieuny/juice-shop:$DIGEST
+            cosign sign -y --key $COSIGN_KEY docker.io/hieuny/juice-shop@$DIGEST
           '''
         }
       }
