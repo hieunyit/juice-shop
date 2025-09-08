@@ -186,6 +186,7 @@ pipeline {
         withCredentials([file(credentialsId: 'cosign-public-key', variable: 'COSIGN_PUBLIC_KEY')]) {
           script {
             sh '''
+              DIGEST=$(cat digest.txt)
               if cosign verify --key $COSIGN_PUBLIC_KEY docker.io/hieuny/juice-shop@$DIGEST > /dev/null; then
                 echo "✅ Cosign verify OK: $IMG"
                 exit 0
