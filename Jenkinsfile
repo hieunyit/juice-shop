@@ -25,10 +25,11 @@ pipeline {
       steps {
         catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
           sh '''
+            mkdir report
             gitleaks detect --source . --redact \
               --report-format json \
               --gitleaks-ignore-path . \
-              --report-path gitleaks-report.json
+              --report-path report/gitleaks-report.json
           '''
         }
       }
@@ -39,7 +40,7 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-              npm audit --audit-level=critical --json > npm-audit-report.json
+              npm audit --audit-level=critical --json > report/npm-audit-report.json
               '''
             }
           }
@@ -49,7 +50,7 @@ pipeline {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               dependencyCheck additionalArguments: '''
                 --scan './'
-                --out './'
+                --out './report'
                 --format 'ALL'
                 --exclude '**/test/files/**'
                 --disableArchive
@@ -61,7 +62,7 @@ pipeline {
         stage('retire.js scan Dependency') {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh 'retire --severity high --path .  --outputformat json --outputpath retire-report.json'
+              sh 'retire --severity high --path .  --outputformat json --outputpath report/retire-report.json'
             }
           }
         }
@@ -82,7 +83,7 @@ pipeline {
                   --exclude node_modules --exclude dist --exclude build --exclude coverage --exclude .git \
                   --timeout 10 \
                   --error \
-                  --json --json-output=semgrep-report.json
+                  --json --json-output=report/semgrep-report.json
               '''
             }
           }
@@ -91,7 +92,7 @@ pipeline {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
               sh '''
-                njsscan --sarif -o njsscan-report.sarif .
+                njsscan --sarif -o report/njsscan-report.sarif .
               '''
             }
           }
@@ -142,7 +143,7 @@ pipeline {
                            else          print (last_external!=""?last_external:last_any);
                          }' Dockerfile
                   )
-                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o trivy-report.json $dockerImageName
+                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o report/trivy-report.json $dockerImageName
                  '''
                }
             }
@@ -153,7 +154,7 @@ pipeline {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
                script {
                  sh '''
-                   conftest test --parser dockerfile -p policy Dockerfile  --output sarif > opa-report.sarif
+                   conftest test --parser dockerfile -p policy Dockerfile  --output sarif > report/opa-report.sarif
                  '''
                }
             }
@@ -255,7 +256,7 @@ pipeline {
            sh '''
               URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
               chmod 777 $(pwd)
-              docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py -t http://$URL:3000 -x zap-report.xml -r zap-report.html
+              docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py -t http://$URL:3000 -x report/zap-report.xml -r report/zap-report.html
            '''
          }
        }
@@ -296,6 +297,12 @@ pipeline {
             fi
           '''
         }
+      script {
+        sh '''
+          python3 report/vuln_report.py *.sarif *.json
+        '''
+        
+      }
     }
   }
 }
