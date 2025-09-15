@@ -188,7 +188,7 @@ pipeline {
           script {
             sh '''
               DIGEST=$(cat digest.txt)
-              if cosign verify --key $COSIGN_PUBLIC_KEY docker.io/hieuny/juice-shop@$DIGEST > /dev/null; then
+              if cosign verify --key $COSIGN_PUBLIC_KEY docker.io/hieuny/juice-shop:$GIT_COMMIT > /dev/null; then
                 echo "✅ Cosign verify OK: $IMG"
                 exit 0
               else
@@ -286,7 +286,7 @@ pipeline {
                 -F "engagement_id=$ENGAGEMENT_ID" \
                 -F "api_scan_configuration=$API_SCAN_CFG_ID"
             else
-              curl -sS -X POST "$DOJO_URL/api/v2/import-scan/" \
+              curl -sS -X POST "$DOJO_URL/api/v2/reimport-scan/" \
                 -H "Authorization: Token $DOJO_TOKEN" \
                 -F "scan_type=SonarQube API Import" \
                 -F "product_name=$PRODUCT_NAME" \
