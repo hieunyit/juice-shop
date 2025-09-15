@@ -15,13 +15,6 @@ pipeline {
     API_SCAN_CFG_ID = '1'
   }
 
-  stages {
-    stage('Installing Dependencies') {
-      steps {
-        sh 'npm install --no-audit'
-      }
-    }
-
     stage('Snyk Code Security') {
       steps {
         script {
@@ -31,7 +24,7 @@ pipeline {
               failOnIssues: false,
               failOnError: true,  
               additionalArguments: '''
-                  --command=code test 
+                  --command=code . 
                   --json-file-output=snyk-code-results.json
                   --sarif-file-output=snyk-code-results.sarif
                   --report
