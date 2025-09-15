@@ -15,24 +15,7 @@ pipeline {
     API_SCAN_CFG_ID = '1'
   }
 
-    stage('Snyk Code Security') {
-      steps {
-        script {
-          snykSecurity(
-              snykInstallation: 'snyk',
-              snykTokenId: 'snyk',
-              failOnIssues: false,
-              failOnError: true,  
-              additionalArguments: '''
-                  --command=code . 
-                  --json-file-output=snyk-code-results.json
-                  --sarif-file-output=snyk-code-results.sarif
-                  --report
-              '''.stripIndent().trim()
-          )
-        }
-      }
-    }
+  stages {
     stage('Snyk Open Source') {
       steps {
         script {
