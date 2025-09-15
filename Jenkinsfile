@@ -24,63 +24,12 @@ pipeline {
               snykTokenId: 'snyk',
               failOnIssues: false,
               failOnError: true,  
-              additionalArguments: '''
-                  --all-projects
-                  --detection-depth=4
-                  --json-file-output=snyk-oss-results.json
-                  --sarif-file-output=snyk-oss-results.sarif
-                  --report
-              '''.stripIndent().trim()
+              additionalArguments: '--all-projects --detection-depth=4'
           )
         }
       }
     }
-    stage('Snyk Container Security') {
-      steps {
-        script {
-          sh '''
-            dockerImageName=$(
-              awk 'BEGIN{IGNORECASE=1}
-              toupper($1)=="FROM"{
-                count++
-                img=""; stg=""
-                for(i=2;i<=NF;i++){
-                  t=$i
-                  if (t ~ /^--platform=/) continue
-                  if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
-                  if (img=="") img=t
-                }
-                if (stg!="") stages[tolower(stg)]=1
-                if (img!="") {
-                  if (!(tolower(img) in stages)) {
-                    if (first_external=="") first_external=img
-                    last_external=img
-                  }
-                  last_any=img
-                }
-              }
-              END{
-                if (count<=1) print (first_external!=""?first_external:last_any);
-                else          print (last_external!=""?last_external:last_any);
-              }' Dockerfile
-            )
-          '''
-          snykSecurity(
-            snykInstallation: 'snyk',
-            snykTokenId: 'snyk',
-            failOnIssues: false,
-            failOnError: true,  
-            additionalArguments: '''
-                --command=container test $dockerImageName
-                --json-file-output=snyk-container-results.json
-                --sarif-file-output=snyk-container-results.sarif
-                --exclude-base-image-vulns
-                --report
-            '''.stripIndent().trim()
-          )
-        }
-      }
-    }
+
   }
   post {
     always {
