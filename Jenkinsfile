@@ -13,6 +13,7 @@ pipeline {
     ENGAGEMENT_ID = '1'
     ENGAGEMENT_NAME = 'Jenkins'
     API_SCAN_CFG_ID = '1'
+    SNYK_TOKEN = credentials('snyk')
   }
 
   stages {
@@ -24,26 +25,13 @@ pipeline {
     stage('Snyk Open Source') {
       steps {
         script {
-          snykSecurity(
-              snykInstallation: 'snyk',
-              snykTokenId: 'snyk',
-              failOnIssues: false,
-              failOnError: true,  
-              additionalArguments: '--all-projects --detection-depth=4'
-          )
+          sh '''
+            snyk auth ${SNYK_TOKEN}
+            snyk test 
+          '''
         }
       }
     }
 
-  }
-  post {
-    always {
-      script {
-        sh '''
-          python3 report/vuln_report.py report/*.sarif report/*.json
-        '''
-        
-      }
-    }
   }
 }
