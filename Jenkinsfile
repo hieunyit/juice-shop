@@ -16,6 +16,11 @@ pipeline {
   }
 
   stages {
+    stage('Installing Dependencies') {
+      steps {
+        sh 'npm install --no-audit'
+      }
+    }
     stage('Snyk Open Source') {
       steps {
         script {
