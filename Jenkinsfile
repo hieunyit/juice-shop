@@ -143,7 +143,7 @@ pipeline {
                            else          print (last_external!=""?last_external:last_any);
                          }' Dockerfile
                   )
-                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o report/trivy-report.json $dockerImageName
+                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --quiet -f json -o report/trivy-report.json $dockerImageName
                  '''
                }
             }
