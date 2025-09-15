@@ -21,143 +21,86 @@ pipeline {
         sh 'npm install --no-audit'
       }
     }
-    stage('Gitleaks scan secret') {
+
+    stage('Snyk Code Security') {
       steps {
-        catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
+        script {
+          snykSecurity(
+              snykInstallation: 'snyk',
+              snykTokenId: 'snyk',
+              failOnIssues: false,
+              failOnError: true,  
+              additionalArguments: '''
+                  --command=code test 
+                  --json-file-output=snyk-code-results.json
+                  --sarif-file-output=snyk-code-results.sarif
+                  --report
+              '''.stripIndent().trim()
+          )
+        }
+      }
+    }
+    stage('Snyk Open Source') {
+      steps {
+        script {
+          snykSecurity(
+              snykInstallation: 'snyk',
+              snykTokenId: 'snyk',
+              failOnIssues: false,
+              failOnError: true,  
+              additionalArguments: '''
+                  --all-projects
+                  --detection-depth=4
+                  --json-file-output=snyk-oss-results.json
+                  --sarif-file-output=snyk-oss-results.sarif
+                  --report
+              '''.stripIndent().trim()
+          )
+        }
+      }
+    }
+    stage('Snyk Container Security') {
+      steps {
+        script {
           sh '''
-            gitleaks detect --source . --redact \
-              --report-format json \
-              --gitleaks-ignore-path . \
-              --report-path report/gitleaks-report.json
-          '''
-        }
-      }
-    }
-    stage('Dependency Scanning') {
-      parallel {
-        stage('NPM Dependency Audit') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh '''
-              npm audit --audit-level=critical --json > report/npm-audit-report.json
-              '''
-            }
-          }
-        }
-        stage('OWASP Dependency Check') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              dependencyCheck additionalArguments: '''
-                --scan './'
-                --out './report'
-                --format 'ALL'
-                --exclude '**/test/files/**'
-                --disableArchive
-                --prettyPrint
-              ''', odcInstallation: 'OWASP-DepCheck-12'
-            }
-          }
-        }
-        stage('retire.js scan Dependency') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh 'retire --severity high --path .  --outputformat json --outputpath report/retire-report.json'
-            }
-          }
-        }
-      }
-    }
-    stage('SAST Scanning') {
-      parallel {
-        stage('Semgrep scan') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh '''
-                semgrep scan \
-                  --config p/owasp-top-ten \
-                  --config p/security-audit \
-                  --config p/secrets \
-                  --config p/javascript \
-                  --metrics=off \
-                  --exclude node_modules --exclude dist --exclude build --exclude coverage --exclude .git \
-                  --timeout 10 \
-                  --error \
-                  --json --json-output=report/semgrep-report.json
-              '''
-            }
-          }
-        }
-        stage('Nodejsscan scan') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh '''
-                njsscan --sarif -o report/njsscan-report.sarif .
-              '''
-            }
-          }
-        }
-        stage('Sonarqube scan') {
-          steps {
-            withSonarQubeEnv('SonarQube Server') {
-              sh '''
-                $SONAR_SCANNER_HOME/bin/sonar-scanner \
-                  -Dsonar.projectKey=juice-shop \
-                  -Dsonar.exclusions=**/test/**
-              '''
-            }
-          }
-        }
-      }
-    }
-    
-    stage('Vulnerability Scan - Docker'){
-      parallel {
-        stage('Trivy scan') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-               script {
-                 sh '''
-                  dockerImageName=$(
-                    awk 'BEGIN{IGNORECASE=1}
-                         toupper($1)=="FROM"{
-                           count++
-                           img=""; stg=""
-                           for(i=2;i<=NF;i++){
-                             t=$i
-                             if (t ~ /^--platform=/) continue
-                             if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
-                             if (img=="") img=t
-                           }
-                           if (stg!="") stages[tolower(stg)]=1
-                           if (img!="") {
-                             if (!(tolower(img) in stages)) {
-                               if (first_external=="") first_external=img
-                               last_external=img
-                             }
-                             last_any=img
-                           }
-                         }
-                         END{
-                           if (count<=1) print (first_external!=""?first_external:last_any);
-                           else          print (last_external!=""?last_external:last_any);
-                         }' Dockerfile
-                  )
-                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 -f json -o report/trivy-report.json $dockerImageName
-                 '''
-               }
-            }
-          }
-        }
-        stage('OPA Conftest') {
-          steps {
-            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-               script {
-                 sh '''
-                   conftest test --parser dockerfile -p policy Dockerfile  --output sarif > report/opa-report.sarif
-                 '''
-               }
-            }
-          }
+            dockerImageName=$(
+              awk 'BEGIN{IGNORECASE=1}
+              toupper($1)=="FROM"{
+                count++
+                img=""; stg=""
+                for(i=2;i<=NF;i++){
+                  t=$i
+                  if (t ~ /^--platform=/) continue
+                  if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
+                  if (img=="") img=t
+                }
+                if (stg!="") stages[tolower(stg)]=1
+                if (img!="") {
+                  if (!(tolower(img) in stages)) {
+                    if (first_external=="") first_external=img
+                    last_external=img
+                  }
+                  last_any=img
+                }
+              }
+              END{
+                if (count<=1) print (first_external!=""?first_external:last_any);
+                else          print (last_external!=""?last_external:last_any);
+              }' Dockerfile
+            )
+          snykSecurity(
+            snykInstallation: 'snyk',
+            snykTokenId: 'snyk',
+            failOnIssues: false,
+            failOnError: true,  
+            additionalArguments: '''
+                --command=container test $dockerImageName
+                --json-file-output=snyk-container-results.json
+                --sarif-file-output=snyk-container-results.sarif
+                --exclude-base-image-vulns
+                --report
+            '''.stripIndent().trim()
+          )
         }
       }
     }
