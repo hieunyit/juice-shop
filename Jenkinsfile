@@ -88,6 +88,7 @@ pipeline {
                 else          print (last_external!=""?last_external:last_any);
               }' Dockerfile
             )
+          '''
           snykSecurity(
             snykInstallation: 'snyk',
             snykTokenId: 'snyk',
