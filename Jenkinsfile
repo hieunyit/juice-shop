@@ -18,7 +18,6 @@ pipeline {
 
   stages {
     stage('Installing Dependencies') {
-      options { timestamps() }
       steps {
         cache(
           maxCacheSize: 550,
@@ -32,7 +31,6 @@ pipeline {
           ]
         ) {
           sh 'npm install --no-audit'
-          stash(includes: 'node_modules', name: 'npm-node-modules')
         }
       }
     }
