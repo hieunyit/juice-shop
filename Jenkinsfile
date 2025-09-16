@@ -349,7 +349,7 @@ pipeline {
         }
       script {
         sh '''
-          python3 report/vuln_report.py *.sarif *.json
+          python3 report/vuln_report.py report/*.sarif  report/*.json
         '''
         
       }
