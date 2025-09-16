@@ -79,6 +79,17 @@ pipeline {
             }
           }
         }
+        stage('Snyk Scan SCA') {
+          steps {
+            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
+              script {
+                sh '''
+                  snyk test --severity-threshold=high --json-file-output=report/snyk-sca.json 
+                '''
+              }
+            }
+          }
+        }
       }
     }
     stage('SAST Scanning') {
@@ -101,12 +112,14 @@ pipeline {
             }
           }
         }
-        stage('Nodejsscan scan') {
+        stage('Snyk Scan Source code') {
           steps {
             catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
-              sh '''
-                njsscan --sarif -o report/njsscan-report.sarif .
-              '''
+              script {
+                sh '''
+                  snyk code test --severity-threshold=high --json-file-output=report/snyk-code.json 
+                '''
+              }
             }
           }
         }
