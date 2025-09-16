@@ -17,28 +17,36 @@ pipeline {
   }
 
   stages {
-    stage('Installing Dependencies') {
-      steps {
-        cache(
-          maxCacheSize: 550,
-          caches: [
-            arbitraryFileCache(
-              cacheName: 'npm-dependency-cache',
-              cacheValidityDecidingFile: 'package-lock.json',
-              includes: '**/*',
-              path: 'node_modules'
-            )
-          ]
-        ) {
-          sh 'npm install --no-audit'
-        }
-      }
-    }
     stage('Snyk Open Source') {
       steps {
         script {
           sh '''
-            snyk test --severity-threshold=high --json-file-output=snyk-sca.json 
+            dockerImageName=$(
+                    awk 'BEGIN{IGNORECASE=1}
+                         toupper($1)=="FROM"{
+                           count++
+                           img=""; stg=""
+                           for(i=2;i<=NF;i++){
+                             t=$i
+                             if (t ~ /^--platform=/) continue
+                             if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
+                             if (img=="") img=t
+                           }
+                           if (stg!="") stages[tolower(stg)]=1
+                           if (img!="") {
+                             if (!(tolower(img) in stages)) {
+                               if (first_external=="") first_external=img
+                               last_external=img
+                             }
+                             last_any=img
+                           }
+                         }
+                         END{
+                           if (count<=1) print (first_external!=""?first_external:last_any);
+                           else          print (last_external!=""?last_external:last_any);
+                         }' Dockerfile
+                  )
+            snyk container test --severity-threshold=high --json-file-output=snyk-image.json  $dockerImageName
           '''
         }
       }
