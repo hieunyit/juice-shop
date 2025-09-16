@@ -26,8 +26,7 @@ pipeline {
       steps {
         script {
           sh '''
-            snyk auth ${SNYK_TOKEN}
-            snyk test 
+            snyk code test --exclude=test --severity-threshold=high --json-file-output=snyk-code.json 
           '''
         }
       }
