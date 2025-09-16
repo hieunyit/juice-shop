@@ -38,7 +38,6 @@ pipeline {
       steps {
         catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
           sh '''
-            mkdir report
             gitleaks detect --source . --redact \
               --report-format json \
               --gitleaks-ignore-path . \
