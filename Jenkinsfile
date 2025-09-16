@@ -205,7 +205,7 @@ pipeline {
                          else          print (last_external!=""?last_external:last_any);
                        }' Dockerfile
                   )
-                  snyk container test --severity-threshold=high --json-file-output=snyk-image.json  $dockerImageName
+                  snyk container test --severity-threshold=high --json-file-output=report/snyk-image.json  $dockerImageName
                  '''
                }
             }
@@ -281,7 +281,7 @@ pipeline {
                   docker stop "juice-shop" && docker rm "juice-shop"
                   echo "Container stop and removed"
                 fi
-                  docker run -d --name juice-shop -p 3000:3000 hieuny/juice-shop:b4e66e4a7ddcb0f9c95ce07a4240786da9bab5d9
+                  docker run -d --name juice-shop -p 3000:3000 hieuny/juice-shop:$GIT_COMMIT
               "
             '''
           }
@@ -310,31 +310,20 @@ pipeline {
           }
         }
       }
-    }
-   stage('DAST - OWASP ZAP') {
-     steps {
-       withAWS(credentials: 'aws-jenkins', region: 'ap-southeast-1') {
-         script {
-           sh '''
-              URL=$(aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[].Value == "server-dev") | .NetworkInterfaces[].Association.PublicIp')
-              chmod 777 $(pwd)
-              docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py -t http://$URL:3000 -x report/zap-report.xml -r report/zap-report.html
-           '''
-         }
-       }
-     }
-   } 
+    } 
   }
   post {
     always {
-      defectDojoPublisher artifact: 'gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Gitleaks Scan'
-      defectDojoPublisher artifact: 'npm-audit-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'NPM Audit v7+ Scan'
-      defectDojoPublisher artifact: 'dependency-check-report.xml', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Dependency Check Scan'
-      defectDojoPublisher artifact: 'retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
-      defectDojoPublisher artifact: 'semgrep-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
-      defectDojoPublisher artifact: 'njsscan-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
-      defectDojoPublisher artifact: 'trivy-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Trivy Scan'
-      defectDojoPublisher artifact: 'opa-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
+      defectDojoPublisher artifact: 'report/gitleaks-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Gitleaks Scan'
+      defectDojoPublisher artifact: 'report/npm-audit-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'NPM Audit v7+ Scan'
+      defectDojoPublisher artifact: 'report/dependency-check-report.xml', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Dependency Check Scan'
+      defectDojoPublisher artifact: 'report/snyk-sca.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Snyk Scan'
+      defectDojoPublisher artifact: 'report/retire-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Retire.js Scan'
+      defectDojoPublisher artifact: 'report/semgrep-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Semgrep JSON Report'
+      defectDojoPublisher artifact: 'report/snyk-code.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Snyk Code Scan'
+      defectDojoPublisher artifact: 'report/trivy-report.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Trivy Scan'
+      defectDojoPublisher artifact: 'report/snyk-image.json', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'Snyk Scan'
+      defectDojoPublisher artifact: 'report/opa-report.sarif', autoCreateEngagements: false, autoCreateProducts: false, engagementId: '1', productId: '1', scanType: 'SARIF'
        script {
           sh '''
             TEST_ID=$(curl -sS -H "Authorization: Token $DOJO_TOKEN" "$DOJO_URL/api/v2/tests/?engagement=$ENGAGEMENT_ID&scan_type=SonarQube%20API%20Import" | jq -r '.results[0].id')
