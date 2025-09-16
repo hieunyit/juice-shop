@@ -168,7 +168,7 @@ pipeline {
                          else          print (last_external!=""?last_external:last_any);
                        }' Dockerfile
                   )
-                  trivy image --skip-db-update --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --quiet -f json -o report/trivy-report.json $dockerImageName
+                  trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --quiet -f json -o report/trivy-report.json $dockerImageName
                  '''
                }
             }
@@ -238,7 +238,7 @@ pipeline {
         withCredentials([file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),string(credentialsId: 'cosign-pass', variable: 'COSIGN_PASSWORD')]) {
           sh '''
             DIGEST=$(cat digest.txt)
-            cosign sign -y --key $COSIGN_KEY --tlog-upload=false docker.io/hieuny/juice-shop@$DIGEST
+            cosign sign -y --key $COSIGN_KEY docker.io/hieuny/juice-shop@$DIGEST
           '''
         }
       }
