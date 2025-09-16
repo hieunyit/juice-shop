@@ -18,8 +18,22 @@ pipeline {
 
   stages {
     stage('Installing Dependencies') {
+      options { timestamps() }
       steps {
-        sh 'npm install --no-audit'
+        cache(
+          maxCacheSize: 550,
+          caches: [
+            arbitraryFileCache(
+              cacheName: 'npm-dependency-cache',
+              cacheValidityDecidingFile: 'package-lock.json',
+              includes: '**/*',
+              path: 'node_modules'
+            )
+          ]
+        ) {
+          sh 'npm install --no-audit'
+          stash(includes: 'node_modules', name: 'npm-node-modules')
+        }
       }
     }
     stage('Snyk Open Source') {
