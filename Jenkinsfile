@@ -146,30 +146,66 @@ pipeline {
                  sh '''
                   dockerImageName=$(
                     awk 'BEGIN{IGNORECASE=1}
-                         toupper($1)=="FROM"{
-                           count++
-                           img=""; stg=""
-                           for(i=2;i<=NF;i++){
-                             t=$i
-                             if (t ~ /^--platform=/) continue
-                             if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
-                             if (img=="") img=t
-                           }
-                           if (stg!="") stages[tolower(stg)]=1
-                           if (img!="") {
-                             if (!(tolower(img) in stages)) {
-                               if (first_external=="") first_external=img
-                               last_external=img
-                             }
-                             last_any=img
-                           }
+                       toupper($1)=="FROM"{
+                         count++
+                         img=""; stg=""
+                         for(i=2;i<=NF;i++){
+                           t=$i
+                           if (t ~ /^--platform=/) continue
+                           if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
+                           if (img=="") img=t
                          }
-                         END{
-                           if (count<=1) print (first_external!=""?first_external:last_any);
-                           else          print (last_external!=""?last_external:last_any);
-                         }' Dockerfile
+                         if (stg!="") stages[tolower(stg)]=1
+                         if (img!="") {
+                           if (!(tolower(img) in stages)) {
+                             if (first_external=="") first_external=img
+                             last_external=img
+                           }
+                           last_any=img
+                         }
+                       }
+                       END{
+                         if (count<=1) print (first_external!=""?first_external:last_any);
+                         else          print (last_external!=""?last_external:last_any);
+                       }' Dockerfile
                   )
                   trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --quiet -f json -o report/trivy-report.json $dockerImageName
+                 '''
+               }
+            }
+          }
+        }
+        stage('Snyk scan image') {
+          steps {
+            catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in future releases', stageResult: 'UNSTABLE') {
+               script {
+                 sh '''
+                  dockerImageName=$(
+                    awk 'BEGIN{IGNORECASE=1}
+                       toupper($1)=="FROM"{
+                         count++
+                         img=""; stg=""
+                         for(i=2;i<=NF;i++){
+                           t=$i
+                           if (t ~ /^--platform=/) continue
+                           if (toupper(t)=="AS"){ if (i+1<=NF) stg=$(i+1); break }
+                           if (img=="") img=t
+                         }
+                         if (stg!="") stages[tolower(stg)]=1
+                         if (img!="") {
+                           if (!(tolower(img) in stages)) {
+                             if (first_external=="") first_external=img
+                             last_external=img
+                           }
+                           last_any=img
+                         }
+                       }
+                       END{
+                         if (count<=1) print (first_external!=""?first_external:last_any);
+                         else          print (last_external!=""?last_external:last_any);
+                       }' Dockerfile
+                  )
+                  snyk container test --severity-threshold=high --json-file-output=snyk-image.json  $dockerImageName
                  '''
                }
             }
