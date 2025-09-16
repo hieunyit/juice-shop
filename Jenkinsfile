@@ -40,7 +40,7 @@ pipeline {
       steps {
         script {
           sh '''
-            snyk code test --exclude=test --severity-threshold=high --json-file-output=snyk-code.json 
+            snyk code test --severity-threshold=high --json-file-output=snyk-code.json 
           '''
         }
       }
