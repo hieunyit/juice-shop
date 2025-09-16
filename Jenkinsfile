@@ -4,6 +4,7 @@ pipeline {
     nodejs 'nodejs22.18.0'
   }
   environment {
+    SNYK_TOKEN = credentials('snyk')
     SONAR_SCANNER_HOME = tool 'sonarqube-scanner-720'
     DOCKER_PASSWORD = credentials('docker-hub-password')
     DOJO_URL = 'http://localhost:8081'
@@ -18,7 +19,19 @@ pipeline {
   stages {
     stage('Installing Dependencies') {
       steps {
-        sh 'npm install --no-audit'
+        cache(
+          maxCacheSize: 550,
+          caches: [
+            arbitraryFileCache(
+              cacheName: 'npm-dependency-cache',
+              cacheValidityDecidingFile: 'package-lock.json',
+              includes: '**/*',
+              path: 'node_modules'
+            )
+          ]
+        ) {
+          sh 'npm install --no-audit'
+        }
       }
     }
     stage('Gitleaks scan secret') {
